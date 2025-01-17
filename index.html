@@ -40,7 +40,7 @@
 
   <script>
     async function fetchCryptoData() {
-      const crypto = document.getElementById('cryptoInput').value.toLowerCase();
+      const crypto = document.getElementById('cryptoInput').value.toLowerCase().trim();
       const priceElement = document.getElementById('price');
       const ctx = document.getElementById('priceChart').getContext('2d');
 
@@ -54,9 +54,12 @@
         const priceResponse = await fetch(
           `https://api.coingecko.com/api/v3/simple/price?ids=${crypto}&vs_currencies=usd`
         );
+        if (!priceResponse.ok) {
+          throw new Error('Invalid cryptocurrency code or network error.');
+        }
         const priceData = await priceResponse.json();
         if (!priceData[crypto]) {
-          alert('Cryptocurrency not found!');
+          alert('Cryptocurrency not found! Please check the code.');
           return;
         }
 
@@ -67,6 +70,9 @@
         const marketResponse = await fetch(
           `https://api.coingecko.com/api/v3/coins/${crypto}/market_chart?vs_currency=usd&days=365`
         );
+        if (!marketResponse.ok) {
+          throw new Error('Error fetching market data.');
+        }
         const marketData = await marketResponse.json();
 
         const dates = marketData.prices.map((point) => {
@@ -75,8 +81,13 @@
         });
         const prices = marketData.prices.map((point) => point[1]);
 
+        // Clear the previous chart if it exists
+        if (window.myChart) {
+          window.myChart.destroy();
+        }
+
         // Draw the chart
-        new Chart(ctx, {
+        window.myChart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: dates,
@@ -100,7 +111,7 @@
           },
         });
       } catch (error) {
-        alert('An error occurred while fetching data.');
+        alert('An error occurred: ' + error.message);
         console.error(error);
       }
     }
