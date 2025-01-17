@@ -31,8 +31,8 @@
 </head>
 <body>
   <h1>💹 Crypto Price Tracker</h1>
-  <p>Enter a cryptocurrency code (e.g., <b>bitcoin</b>, <b>ethereum</b>)</p>
-  <input id="cryptoInput" type="text" placeholder="e.g., bitcoin" />
+  <p>Enter a cryptocurrency code (e.g., <b>BTC</b>, <b>ETH</b>, <b>DOGE</b>)</p>
+  <input id="cryptoInput" type="text" placeholder="e.g., BTC" />
   <button onclick="fetchCryptoData()">🔍 Get Price & Chart</button>
 
   <h2 id="price">Price: --</h2>
@@ -40,7 +40,7 @@
 
   <script>
     async function fetchCryptoData() {
-      const crypto = document.getElementById('cryptoInput').value.toLowerCase().trim();
+      const crypto = document.getElementById('cryptoInput').value.toUpperCase().trim();
       const priceElement = document.getElementById('price');
       const ctx = document.getElementById('priceChart').getContext('2d');
 
@@ -50,36 +50,31 @@
       }
 
       try {
-        // Fetch the latest price
+        // Fetch the latest price using an alternative API
         const priceResponse = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${crypto}&vs_currencies=usd`
+          `https://api.binance.com/api/v3/ticker/price?symbol=${crypto}USDT`
         );
         if (!priceResponse.ok) {
           throw new Error('Invalid cryptocurrency code or network error.');
         }
         const priceData = await priceResponse.json();
-        if (!priceData[crypto]) {
-          alert('Cryptocurrency not found! Please check the code.');
-          return;
-        }
-
-        const price = priceData[crypto].usd;
+        const price = parseFloat(priceData.price).toFixed(2);
         priceElement.textContent = `Price: $${price}`;
 
         // Fetch historical data for 1 year
-        const marketResponse = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${crypto}/market_chart?vs_currency=usd&days=365`
+        const historyResponse = await fetch(
+          `https://api.binance.com/api/v3/klines?symbol=${crypto}USDT&interval=1d&limit=365`
         );
-        if (!marketResponse.ok) {
+        if (!historyResponse.ok) {
           throw new Error('Error fetching market data.');
         }
-        const marketData = await marketResponse.json();
+        const historyData = await historyResponse.json();
 
-        const dates = marketData.prices.map((point) => {
+        const dates = historyData.map((point) => {
           const date = new Date(point[0]);
           return `${date.getMonth() + 1}/${date.getDate()}`;
         });
-        const prices = marketData.prices.map((point) => point[1]);
+        const prices = historyData.map((point) => parseFloat(point[4]));
 
         // Clear the previous chart if it exists
         if (window.myChart) {
@@ -92,7 +87,7 @@
           data: {
             labels: dates,
             datasets: [{
-              label: `${crypto.toUpperCase()} Price (Last 1 Year)`,
+              label: `${crypto} Price (Last 1 Year)`,
               data: prices,
               borderColor: 'blue',
               borderWidth: 2,
