@@ -58,7 +58,7 @@
           throw new Error('Invalid cryptocurrency code or network error.');
         }
         const priceData = await priceResponse.json();
-        const price = parseFloat(priceData.price).toFixed(2);
+        const price = parseFloat(priceData.price).toFixed(6);
         priceElement.textContent = `Price: $${price}`;
 
         // Fetch historical data for 1 year
